@@ -1,0 +1,9 @@
+BCI-Game unnamed project
+
+Dependencies:
+Python 2.7
+PyGame
+Numpy
+OpenBCI-Python (and dependencies)
+Scipy
+Scikit-learn
