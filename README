@@ -1,9 +1,9 @@
-BCI-Game unnamed project
+Think-Blast is a space shooter game that uses a Brain-Computer Interface (BCI) to control the player-ship. A second player (co-pilot) uses the keyboard to control other movements of the ship, so the game is two-player co-op only. Think-Blast requires the use of an openBCI Cyton to provide BCI functionality. 
 
-Dependencies:
-Python 2.7
-PyGame
-Numpy
-OpenBCI-Python (and dependencies)
-Scipy
-Scikit-learn
+Software Dependencies:
+ - Python 2.7
+ - PyGame
+ - Numpy
+ - OpenBCI-Python (and dependencies)
+ - Scipy
+ - Scikit-learn
