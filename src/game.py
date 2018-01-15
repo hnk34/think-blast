@@ -5,32 +5,82 @@ from math import sin, cos, degrees
 
 clock = pygame.time.Clock() # global b/c it needs to be
 
+def generate_ssvep(event_num, time):
+    SSVEP = pygame.USEREVENT + event_num
+    pygame.time.set_timer(SSVEP, time)
+    ssvep_on = pygame.Surface((50, 700))
+    ssvep_on.fill((255,255,255))
+    ssvep_off = pygame.Surface((50, 700))
+    ssvep_off.fill((0, 0, 0))
+    ssvep_surfaces = cycle([ssvep_on, ssvep_off])
+    ssvep_surface = next(ssvep_surfaces)
+    return SSVEP, ssvep_surfaces, ssvep_surface
+
+def render_text(msg, size):
+    select_font = pygame.font.Font('../assets/ms_reg.ttf', size)
+    return select_font.render(msg, True, (255,255,255))
+
 def calibrate():
     done = False # game state
 
     screen = pygame.display.set_mode((700,700))
     
-    SSVEP1 = pygame.USEREVENT + 0
-    pygame.time.set_timer(SSVEP1, 100) 
-    ssvep1_on = pygame.Surface((50, 700))
-    ssvep1_on.fill((255,255,255))
-    ssvep1_off = pygame.Surface((50, 700))
-    ssvep1_off.fill((0, 0, 0))
-    ssvep_surfaces1 = cycle([ssvep1_on, ssvep1_off])
-    ssvep_surface1 = next(ssvep_surfaces1)
+    SSVEP1, ssvep_surfaces1, ssvep_surface1 = generate_ssvep(0, 100)
+    SSVEP2, ssvep_surfaces2, ssvep_surface2 = generate_ssvep(1, 40)
+    
+    look_left     = render_text("Look at the left flashing light",20)
+    look_center   = render_text("Look at the center of the screen", 20)
+    look_right    = render_text("Look at the right flashing light", 20)
+    text_surfaces = cycle([look_left, look_center, look_right])
+    text_surface  = next(text_surfaces)
 
-    while not done:
+    TRIAL = pygame.USEREVENT + 2
+    pygame.time.set_timer(TRIAL, 5000) 
+    num_trials = 1 * 3
+    
+    i = 1
+    while (not done) and (i <= num_trials):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 done = True
             if event.type == SSVEP1:
                 ssvep_surface1 = next(ssvep_surfaces1)
+            if event.type == SSVEP2:
+                ssvep_surface2 = next(ssvep_surfaces2)
+            if event.type == TRIAL:
+                text_surface = next(text_surfaces)
+                i += 1
 
         screen.fill((0, 0, 0))
-        screen.blit(ssvep_surface1, (0,0))
+        screen.blit(ssvep_surface1, (0, 0))
+        screen.blit(ssvep_surface2, (650, 0))
+        screen.blit(text_surface, (200, 200))
         pygame.display.flip()
         clock.tick(60)
 
+    think_active  = render_text("Think about moving wildly, loud noises, etc.",20)
+    think_neutral = render_text("Think normally", 20)
+    think_passive = render_text("Think about nothing, clear your mind", 20)
+    text_surfaces = cycle([think_active, think_neutral, think_passive])
+    text_surface  = next(text_surfaces)
+
+    TRIAL = pygame.USEREVENT + 2
+    pygame.time.set_timer(TRIAL, 5000)
+    num_trials = 1 * 3
+    i = 1
+    while not done and (i < num_trials + 1):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                done = True
+            if event.type == TRIAL:
+                text_surface = next(text_surfaces)
+                i += 1
+
+        screen.fill((0, 0, 0))
+        screen.blit(text_surface, (200, 200))
+        pygame.display.flip()
+        clock.tick(60)
+            
 def gameplay():
     done = False # game state
 
@@ -73,15 +123,13 @@ def main():
 
         screen.fill((0,0,0))
         
-        title_font = pygame.font.Font('../assets/ms_reg.ttf', 50)
-        title = title_font.render("Think-Blast", True, (255,255,255))
+        title = render_text("Think-Blast", 50)
         screen.blit(title, (200,50))
 
-        option_font = pygame.font.Font('../assets/ms_reg.ttf', 22)
-        option_quit = option_font.render("Press q to Quit", True, (255,255,255))
-        option_play = option_font.render("Press p to Play", True, (255,255,255))
-        option_cal = option_font.render("Press c to Calibrate",
-                                        True, (255,255,255))
+        option_quit = render_text("Press q to Quit", 20)
+        option_play = render_text("Press p to Play", 20)
+        option_cal  = render_text("Press c to Calibrate", 20)
+
         screen.blit(option_play, (200, 120))
         screen.blit(option_cal, (200, 140))
         screen.blit(option_quit, (200, 160))
