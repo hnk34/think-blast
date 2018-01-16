@@ -3,17 +3,20 @@ from itertools import cycle
 from ship import ship, enemy
 from math import sin, cos, degrees
 
-clock = pygame.time.Clock() # global b/c it needs to be
+clock  = pygame.time.Clock()
+screen = pygame.display.set_mode((700,700))
 
 def generate_ssvep(event_num, time):
     SSVEP = pygame.USEREVENT + event_num
     pygame.time.set_timer(SSVEP, time)
-    ssvep_on = pygame.Surface((50, 700))
-    ssvep_on.fill((255,255,255))
+    
+    ssvep_on  = pygame.Surface((50, 700))
     ssvep_off = pygame.Surface((50, 700))
+    ssvep_on.fill((255,255,255))
     ssvep_off.fill((0, 0, 0))
+    
     ssvep_surfaces = cycle([ssvep_on, ssvep_off])
-    ssvep_surface = next(ssvep_surfaces)
+    ssvep_surface  = next(ssvep_surfaces)
     return SSVEP, ssvep_surfaces, ssvep_surface
 
 def render_text(msg, size):
@@ -36,8 +39,7 @@ def calibrate():
 
     TRIAL = pygame.USEREVENT + 2
     pygame.time.set_timer(TRIAL, 5000) 
-    num_trials = 1 * 3
-    
+    num_trials = 1 * 3 
     i = 1
     while (not done) and (i <= num_trials):
         for event in pygame.event.get():
@@ -84,7 +86,18 @@ def calibrate():
 def gameplay():
     done = False # game state
 
-    ship1 = ship(350, 350, 0)
+    all_sprites = pygame.sprite.Group()
+    ship1       = ship()
+    all_sprites.add(ship1)
+    
+    enemies = pygame.sprite.Group() 
+    for i in range(0,2):
+        e = enemy(True)
+        all_sprites.add(e)
+    for i in range(0,2):
+        e = enemy(False)
+        all_sprites.add(e)
+
     screen = pygame.display.set_mode((700,700))
 
     while not done:
@@ -92,10 +105,10 @@ def gameplay():
             if event.type == pygame.QUIT:
                 done = True
 
-        ship1.keyboard_movement()
+        all_sprites.update()
 
         screen.fill((0, 0, 0))
-        screen.blit(ship1.simage, (ship1.x, ship1.y))
+        all_sprites.draw(screen)
  
         pygame.display.flip()
         clock.tick(60)
@@ -104,8 +117,6 @@ def main():
     pygame.init()
     pygame.display.set_caption('Think-Blast')
     done = False
-
-    screen = pygame.display.set_mode((700,700))
 
     while not done:
         for event in pygame.event.get():
