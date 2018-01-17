@@ -1,10 +1,10 @@
 import pygame
 from itertools import cycle
-from game_object import ship, enemy
+from game_object import *
 from math import sin, cos, degrees
 
 SCREEN_HEIGHT = 700
-SCREEN_WIDTH  = 600
+SCREEN_WIDTH  = 700
 clock  = pygame.time.Clock()
 screen = pygame.display.set_mode((SCREEN_WIDTH + 100, SCREEN_HEIGHT))
 
@@ -24,7 +24,7 @@ def generate_ssvep(event_num, time):
 def render_text(msg, size):
     select_font = pygame.font.Font('../assets/ms_reg.ttf', size)
     text_surf   = select_font.render(msg, True, (255,255,255))
-    text_rect   = text_surf.get_rect(center = (700/2, 700/2))
+    text_rect   = text_surf.get_rect(center = (SCREEN_WIDTH/2, SCREEN_HEIGHT/2))
     return text_surf, text_rect
 
 def run_calibration_set(mode, num_trials, time_per):
@@ -76,6 +76,7 @@ def calibrate():
 def gameplay():
     all_sprites = pygame.sprite.Group()
     enemies     = pygame.sprite.Group()
+    bullets     = pygame.sprite.Group()
     ship1       = ship()
     all_sprites.add(ship1)
 
@@ -98,8 +99,19 @@ def gameplay():
                 ssvep_surf1 = next(ssvep_surfs1)
             if event.type == SSVEP2:
                 ssvep_surf2 = next(ssvep_surfs2)
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                b = bullet(ship1.angle)
+                b.rect.x = ship1.rect.centerx
+                b.rect.y = ship1.rect.centery
+                all_sprites.add(b)
+                bullets.add(b)
 
         all_sprites.update()
+
+        player_hits = pygame.sprite.spritecollide(ship1, enemies, False)
+        if player_hits:
+            done = True
+        bullet_hits = pygame.sprite.groupcollide(enemies, bullets, True, True)
 
         screen.fill((0, 0, 0))
         screen.blit(ssvep_surf1, (0, 0))

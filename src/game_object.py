@@ -3,14 +3,23 @@ import math
 import random
 
 SCREEN_HEIGHT = 700
-SCREEN_WIDTH  = 600
-screen        = pygame.display.set_mode((SCREEN_WIDTH + 100, SCREEN_HEIGHT))
+SCREEN_WIDTH  = 700
+screen        = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 screen_rect   = screen.get_rect()
 
 class game_object(pygame.sprite.Sprite):
     def __init__(self, angle):
         super(game_object, self).__init__()
         self.angle = angle
+        self.speed = 0
+
+    def move_forward(self):
+        self.rect.move_ip(-self.speed*math.sin(self.angle), -self.speed*math.cos(self.angle))
+
+    def update(self):
+        self.move_forward()
+        if not screen_rect.contains(self.rect):
+            self.kill()
 
 class ship(game_object):
     def __init__(self):
@@ -21,45 +30,58 @@ class ship(game_object):
         self.rect.left = SCREEN_WIDTH / 2
         self.rect.top  = SCREEN_HEIGHT / 2
         self.oimage    = self.image
+        self.speed     = 2
+        self.cw_counter, self.ccw_counter = 0, 0
 
     def move_forward(self):
-        self.rect.move_ip(-1*math.sin(self.angle), -1*math.cos(self.angle))
+        self.rect.move_ip(-self.speed*math.sin(self.angle), -self.speed*math.cos(self.angle))
         self.rect.clamp_ip(screen_rect)
 
     def move_backward(self):
-        self.rect.move_ip(1*math.sin(self.angle), 1*math.cos(self.angle))
+        self.rect.move_ip(round(self.speed*math.sin(self.angle)), round(self.speed*math.cos(self.angle)))
         self.rect.clamp_ip(screen_rect)
 
     def rotate_cw(self):
-        self.angle += 0.2
-        if self.angle >= 6.23:
-            self.angle -= 6.23
-        self.image = pygame.transform.rotate(self.oimage, math.degrees(self.angle))
+        self.angle -= (math.pi/4)
+        #if self.angle <= 0.0:
+        #    self.angle += 6.28
+        round_angle =  int(45 * round(math.degrees(self.angle/45)))
+        self.image = pygame.transform.rotate(self.oimage, round_angle)
         self.rect  = self.image.get_rect(center = self.rect.center)
 
     def rotate_ccw(self):
-        self.angle -= 0.2
-        if self.angle <= 0:
-            self.angle += 6.23
-        self.image = pygame.transform.rotate(self.oimage, math.degrees(self.angle))
+        self.angle += (math.pi/4)
+        #if self.angle >= 6.28:
+        #    self.angle -= 6.28
+        round_angle = int(45 * round(math.degrees(self.angle/45)))
+        self.image = pygame.transform.rotate(self.oimage, round_angle)
         self.rect  = self.image.get_rect(center = self.rect.center)
 
     def update(self):
         pressed = pygame.key.get_pressed()
+        if pressed[pygame.K_LEFT] and self.ccw_counter == 0:
+            self.rotate_ccw()
+            self.ccw_counter += 5
+        else:
+            if self.ccw_counter > 0:
+                self.ccw_counter -= 1
+        if pressed[pygame.K_RIGHT] and self.cw_counter == 0:
+            self.rotate_cw()
+            self.cw_counter += 5
+        else:
+            if self.cw_counter > 0:
+                self.cw_counter -= 1
         if pressed[pygame.K_UP]: 
             self.move_forward()
         if pressed[pygame.K_DOWN]:
             self.move_backward()
-        if pressed[pygame.K_LEFT]: 
-            self.rotate_ccw()
-        if pressed[pygame.K_RIGHT]:
-            self.rotate_cw()
 
 class enemy(game_object):
     def __init__(self):
         super(enemy, self).__init__(0)
         image = pygame.image.load('../assets/enemy.png')
-        
+        self.speed = 2       
+ 
         self.size = random.randint(0,2)
         if self.size == 0: # small enemy
             self.image = pygame.transform.scale(image, (50, 50))
@@ -79,10 +101,10 @@ class enemy(game_object):
             self.rect.top = SCREEN_HEIGHT - self.rect.height
             self.angle    = (3*math.pi)/2 + (random.random()*math.pi)
 
-    def update(self):
-        self.move_forward()
-        if not screen_rect.contains(self.rect):
-            self.kill()
-
-    def move_forward(self):
-        self.rect.move_ip(-1*math.sin(self.angle), -1*math.cos(self.angle))
+class bullet(game_object):
+    def __init__(self, angle):
+        super(bullet, self).__init__(angle)
+        self.image = pygame.Surface((5, 5))
+        self.image.fill((255, 255, 0))
+        self.rect  = self.image.get_rect()
+        self.speed = 5
