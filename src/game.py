@@ -1,12 +1,13 @@
 import pygame
 from itertools import cycle
-from game_object import *
+from game_object import ship, enemy, bullet
 from math import sin, cos, degrees
+from interface import init_lsl, init
 
 SCREEN_HEIGHT = 700
 SCREEN_WIDTH  = 700
 clock  = pygame.time.Clock()
-screen = pygame.display.set_mode((SCREEN_WIDTH + 100, SCREEN_HEIGHT))
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
 def generate_ssvep(event_num, time):
     SSVEP = pygame.USEREVENT + event_num
@@ -43,6 +44,7 @@ def run_calibration_set(mode, num_trials, time_per):
     text_rects = cycle([text_rect1, text_rect2, text_rect3])
     text_rect  = next(text_rects)
 
+    in1 = init_lsl()
     TRIAL = pygame.USEREVENT + 0
     pygame.time.set_timer(TRIAL, time_per)
     i = 0
@@ -67,6 +69,7 @@ def run_calibration_set(mode, num_trials, time_per):
               screen.blit(ssvep_surf2, (SCREEN_WIDTH - 50, 0))
 
          pygame.display.flip()
+         read_lsl(in1)
          clock.tick(60)
         
 def calibrate():
@@ -85,6 +88,9 @@ def gameplay():
 
     SSVEP1, ssvep_surfs1, ssvep_surf1 = generate_ssvep(1, 100)
     SSVEP2, ssvep_surfs2, ssvep_surf2 = generate_ssvep(2, 40)
+
+    game_theme = pygame.mixer.music.load("../assets/game-theme-temp.mp3")
+    pygame.mixer.music.play()
 
     done = False
     while not done:
@@ -115,7 +121,7 @@ def gameplay():
 
         screen.fill((0, 0, 0))
         screen.blit(ssvep_surf1, (0, 0))
-        screen.blit(ssvep_surf2, (SCREEN_WIDTH +50, 0))
+        screen.blit(ssvep_surf2, (SCREEN_WIDTH-50, 0))
         all_sprites.draw(screen)
  
         pygame.display.flip()
