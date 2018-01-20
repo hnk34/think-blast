@@ -2,12 +2,27 @@ import pygame
 from itertools import cycle
 from game_object import ship, enemy, bullet
 from math import sin, cos, degrees
-from interface import init_lsl, init
+from interface import init_lsl, read_lsl, classify_buf
 
 SCREEN_HEIGHT = 700
 SCREEN_WIDTH  = 700
 clock  = pygame.time.Clock()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+
+def write_cal_trial(cal_file, num_trial, mode):
+    if mode == 0 and num_trial == 0:
+        cal_file.write("SSVEP LEFT")
+    elif mode == 0 and num_trial == 1:
+        cal_file.write("SSVEP BASE")
+    elif mode == 0 and num_trial == 2:
+        cal_file.write("SSVEP RIGHT")
+    
+    if mode == 1 and num_trial == 0:
+        cal_file.write("MIMG ALL")
+    if mode == 1 and num_trial == 1:
+        cal_file.write("MIMG BASE")
+    if mode == 1 and num_trial == 2:
+        cal_file.write("MIMG NONE")
 
 def generate_ssvep(event_num, time):
     SSVEP = pygame.USEREVENT + event_num
@@ -28,7 +43,7 @@ def render_text(msg, size):
     text_rect   = text_surf.get_rect(center = (SCREEN_WIDTH/2, SCREEN_HEIGHT/2))
     return text_surf, text_rect
 
-def run_calibration_set(mode, num_trials, time_per):
+def run_calibration_set(cal_file, mode, num_trials, time_per):
     if mode == 0: # SSVEP
         text1, text_rect1 = render_text("Look at the left flashing light",20)
         text2, text_rect2 = render_text("Look at the center of the screen", 20)
@@ -44,12 +59,13 @@ def run_calibration_set(mode, num_trials, time_per):
     text_rects = cycle([text_rect1, text_rect2, text_rect3])
     text_rect  = next(text_rects)
 
-    in1 = init_lsl()
-    TRIAL = pygame.USEREVENT + 0
+    in1           = init_lsl("EEG", 0)
+    i, trial_type = 0
+    done          = False
+    TRIAL         = pygame.USEREVENT + 0
     pygame.time.set_timer(TRIAL, time_per)
-    i = 0
-    done = False
-    while (i < num_trials*3) and not done:
+    while (i < num_trials * 3) and not done:
+
          for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 done = True
@@ -60,7 +76,10 @@ def run_calibration_set(mode, num_trials, time_per):
             if event.type == TRIAL:
                 text_surf = next(text_surfs)
                 text_rect = next(text_rects)
-                i += 1
+                trial_type += 1
+                if trial_type == 3:
+                    trial_type = 0
+                write_cal_trial(cal_file, i, mode)
 
          screen.fill((0,0,0))
          screen.blit(text_surf, text_rect)
@@ -69,12 +88,15 @@ def run_calibration_set(mode, num_trials, time_per):
               screen.blit(ssvep_surf2, (SCREEN_WIDTH - 50, 0))
 
          pygame.display.flip()
-         read_lsl(in1)
-         clock.tick(60)
+         time, sample = read_lsl(in1)
+         cal_file.write("%s %s \n" % (str(time), str(sample)))
+         clock.tick(30)
         
 def calibrate():
-    run_calibration_set(0, 1, 5000)
-    run_calibration_set(1, 1, 5000)   
+    f = open("./cal_file", "w")
+    run_calibration_set(f, 0, 1, 5000)
+    run_calibration_set(f, 1, 1, 5000)   
+    f.close()
 
 def gameplay():
     all_sprites = pygame.sprite.Group()
@@ -91,6 +113,12 @@ def gameplay():
 
     game_theme = pygame.mixer.music.load("../assets/game-theme-temp.mp3")
     pygame.mixer.music.play()
+
+    in1        = init_lsl("EEG", 0)
+    sample_buf = []
+    buf_size   = 100
+    CLASSIFY   = pygame.USEREVENT + 3
+    pygame.time.set_timer(CLASSIFY, 300)
 
     done = False
     while not done:
@@ -111,6 +139,19 @@ def gameplay():
                 b.rect.y = ship1.rect.centery
                 all_sprites.add(b)
                 bullets.add(b)
+            if event.type == CLASSIFY:
+                ssvep_result, mimg_result = classify_buf(sample_buf)
+                if ssvep_result == 0:
+                   ship1.rotate_ccw()
+                if ssvep_result == 2:
+                   ship1.rotate_cw()
+                if mimg_result == 1:
+                    b = bullet(ship1.angle)
+                    b.rect.x = ship1.rect.centerx
+                    b.rect.y = ship1.rect.centery
+                    all_sprites.add(b)
+                    bullets.add(b)
+
 
         all_sprites.update()
 
@@ -122,9 +163,13 @@ def gameplay():
         screen.fill((0, 0, 0))
         screen.blit(ssvep_surf1, (0, 0))
         screen.blit(ssvep_surf2, (SCREEN_WIDTH-50, 0))
-        all_sprites.draw(screen)
- 
+        all_sprites.draw(screen) 
         pygame.display.flip()
+
+        time, sample = read_lsl(in1)
+        sample_buf.append([time] + sample)
+        sample_buf = sample_buf[-buf_size:]
+
         clock.tick(60)
 
 def main():

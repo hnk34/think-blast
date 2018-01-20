@@ -1,13 +1,17 @@
 from pylsl import StreamInlet, resolve_stream
 
-def init_lsl()
+def init_lsl(stream_type, stream_index):
     print("looking for an EEG stream...")
-    streams = resolve_stream('type', 'EEG')
+    streams = resolve_stream('type', stream_type)
 
     # create a new inlet to read from the stream
-    inlet = StreamInlet(streams[0])
+    inlet = StreamInlet(streams[stream_index])
     return inlet
 
-def read_lsl(inlet)
+def read_lsl(inlet):
     sample, timestamp = inlet.pull_sample()
-    return sample, timestamp
+    return timestamp, sample
+
+def classify_buf(buf):
+    ssvep_result, mimg_result = 1, 0
+    return ssvep_result, mimg_result 
