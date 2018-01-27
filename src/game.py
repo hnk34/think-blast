@@ -10,6 +10,14 @@ clock  = pygame.time.Clock()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
 def write_cal_trial(cal_file, num_trial, mode):
+    """
+    write_cal_trial() - Write epoching data to the calibration file
+    @cal_file:  The file variable for the calibration file.
+    @num_trial: The trial number, which is 0, 1, or 2 for 3-class trials.
+    @mode:      SSVEP or motor imagery.
+
+    Returns: None
+    """
     if mode == 0 and num_trial == 0:
         cal_file.write("SSVEP LEFT")
     elif mode == 0 and num_trial == 1:
@@ -24,12 +32,23 @@ def write_cal_trial(cal_file, num_trial, mode):
     if mode == 1 and num_trial == 2:
         cal_file.write("MIMG NONE")
 
-def generate_ssvep(event_num, time):
+def generate_ssvep(event_num, freq):
+    """
+    generate_ssvep() - creates SSVEP surfaces and timers
+    event_num: The event number for the timer - must be unique.
+    freq: The frequency of the SSVEP flashes.
+
+    Helper function for rendering SSVEP flashes. SSVEP is rendered by switching
+    between two surfaces when a certain timer event occurs.
+
+    Return: The timer event, ssvep surfaces, and current surface.
+    """
     SSVEP = pygame.USEREVENT + event_num
     pygame.time.set_timer(SSVEP, time)
 
-    ssvep_on  = pygame.Surface((50, SCREEN_HEIGHT))
-    ssvep_off = pygame.Surface((50, SCREEN_HEIGHT))
+    SSVEP_WIDTH = 50
+    ssvep_on  = pygame.Surface((SSVEP_WIDTH, SCREEN_HEIGHT))
+    ssvep_off = pygame.Surface((SSVEP_WIDTH, SCREEN_HEIGHT))
     ssvep_on.fill((255,255,255))
     ssvep_off.fill((0, 0, 0))
 
@@ -38,13 +57,33 @@ def generate_ssvep(event_num, time):
     return SSVEP, ssvep_surfaces, ssvep_surface
 
 def render_text(msg, size):
+    """
+    render_text() - Render text in the default font.
+    @msg:  The text to display.
+    @size: The font size
+
+    Helper function for rendering text.
+
+    Return: The text object, and the centered text rect
+    """
     select_font = pygame.font.Font('../assets/ms_reg.ttf', size)
     text_surf   = select_font.render(msg, True, (255,255,255))
     text_rect   = text_surf.get_rect(center = (SCREEN_WIDTH/2, SCREEN_HEIGHT/2))
     return text_surf, text_rect
 
 def run_calibration_set(cal_file, mode, num_trials, time_per):
-    if mode == 0: # SSVEP
+    """
+    run_calibration_set() - do a set of trials to generate a calibration dataset
+    @cal_file:   The file variable for the calibration file 
+    @mode:       The type of calibration to do- send 0 for SSVEP, send 1 for motor imagery
+    @num_trials: The number of trials to run
+    @time_per:   How long the trial prompt remains on the screen
+
+    Generates, renders, and runs a set of calibration trials.
+
+    Return: None
+    """
+    if mode == 0:
         text1, text_rect1 = render_text("Look at the left flashing light",20)
         text2, text_rect2 = render_text("Look at the center of the screen", 20)
         text3, text_rect3 = render_text("Look at the right flashing light", 20)
@@ -65,7 +104,6 @@ def run_calibration_set(cal_file, mode, num_trials, time_per):
     TRIAL         = pygame.USEREVENT + 0
     pygame.time.set_timer(TRIAL, time_per)
     while (i < num_trials * 3) and not done:
-
          for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 done = True
@@ -90,7 +128,7 @@ def run_calibration_set(cal_file, mode, num_trials, time_per):
          pygame.display.flip()
          time, sample = read_lsl(in1)
          cal_file.write("%s %s \n" % (str(time), str(sample)))
-         clock.tick(30)
+         clock.tick(60)
         
 def calibrate():
     f = open("./cal_file", "w")
@@ -105,14 +143,15 @@ def gameplay():
     ship1       = ship()
     all_sprites.add(ship1)
 
-    SPAWN = pygame.USEREVENT + 0
-    pygame.time.set_timer(SPAWN, 2000)
+    SPAWN      = pygame.USEREVENT + 0
+    SPAWN_TIME = 2000
+    pygame.time.set_timer(SPAWN, SPAWN_TIME)
 
     SSVEP1, ssvep_surfs1, ssvep_surf1 = generate_ssvep(1, 100)
     SSVEP2, ssvep_surfs2, ssvep_surf2 = generate_ssvep(2, 40)
 
     game_theme = pygame.mixer.music.load("../assets/game-theme-temp.mp3")
-    pygame.mixer.music.play()
+    pygame.mixer.music.play(loops = -1)
 
     in1        = init_lsl("EEG", 0)
     sample_buf = []
@@ -162,7 +201,7 @@ def gameplay():
 
         screen.fill((0, 0, 0))
         screen.blit(ssvep_surf1, (0, 0))
-        screen.blit(ssvep_surf2, (SCREEN_WIDTH-50, 0))
+        screen.blit(ssvep_surf2, (SCREEN_WIDTH - SSVEP_WIDTH, 0))
         all_sprites.draw(screen) 
         pygame.display.flip()
 

@@ -43,22 +43,20 @@ class ship(game_object):
 
     def rotate_cw(self):
         self.angle -= (math.pi/4)
-        #if self.angle <= 0.0:
-        #    self.angle += 6.28
         round_angle =  int(45 * round(math.degrees(self.angle/45)))
         self.image = pygame.transform.rotate(self.oimage, round_angle)
         self.rect  = self.image.get_rect(center = self.rect.center)
 
     def rotate_ccw(self):
         self.angle += (math.pi/4)
-        #if self.angle >= 6.28:
-        #    self.angle -= 6.28
         round_angle = int(45 * round(math.degrees(self.angle/45)))
         self.image = pygame.transform.rotate(self.oimage, round_angle)
         self.rect  = self.image.get_rect(center = self.rect.center)
 
     def update(self):
         pressed = pygame.key.get_pressed()
+        # The counter variables are meant to force a 5-frame delay after rotation
+        # key input, to prevent unwanted keystrokes.
         if pressed[pygame.K_LEFT] and self.ccw_counter == 0:
             self.rotate_ccw()
             self.ccw_counter += 5
