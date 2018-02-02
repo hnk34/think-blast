@@ -7,6 +7,7 @@ from interface import init_lsl, read_lsl, classify_buf
 SCREEN_HEIGHT = 700
 SCREEN_WIDTH  = 1024
 SSVEP_WIDTH   = 50
+SSVEP_HEIGHT  = 50
 clock  = pygame.time.Clock()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
@@ -45,17 +46,18 @@ def generate_ssvep(event_num, freq):
     Return: The timer event, ssvep surfaces, and current surface.
     """
     SSVEP = pygame.USEREVENT + event_num
-    time  = int(round((1.0 / freq) * 1000.0))
+    time  = int(round((1.0 / (freq * 2)) * 1000.0))
     pygame.time.set_timer(SSVEP, time)
 
-    ssvep_on  = pygame.Surface((SSVEP_WIDTH, SCREEN_HEIGHT))
-    ssvep_off = pygame.Surface((SSVEP_WIDTH, SCREEN_HEIGHT))
+    ssvep_on  = pygame.Surface((SSVEP_WIDTH, SSVEP_HEIGHT))
+    ssvep_off = pygame.Surface((SSVEP_WIDTH, SSVEP_HEIGHT))
     ssvep_on.fill((255,255,255))
     ssvep_off.fill((0, 0, 0))
 
     ssvep_surfaces = cycle([ssvep_on, ssvep_off])
     ssvep_surface  = next(ssvep_surfaces)
-    return SSVEP, ssvep_surfaces, ssvep_surface
+    ssvep_rect     = ssvep_surface.get_rect()
+    return SSVEP, ssvep_surfaces, ssvep_surface, ssvep_rect
 
 def render_text(msg, size):
     """
@@ -88,8 +90,8 @@ def run_calibration_set(cal_file, cal_file2, mode, num_trials, time_per):
         text1, text_rect1 = render_text("Look at the left flashing light",20)
         text2, text_rect2 = render_text("Look at the center of the screen", 20)
         text3, text_rect3 = render_text("Look at the right flashing light", 20)
-        SSVEP1, ssvep_surfs1, ssvep_surf1 = generate_ssvep(1, 8.0)
-        SSVEP2, ssvep_surfs2, ssvep_surf2 = generate_ssvep(2, 22.0)
+        SSVEP1, ssvep_surfs1, ssvep_surf1, _ = generate_ssvep(1, 8.0)
+        SSVEP2, ssvep_surfs2, ssvep_surf2, _ = generate_ssvep(2, 22.0)
     elif mode == 1: # Motor imagery
         text1, text_rect1 = render_text("Think about moving wildly, loud noises, etc.",20)
         text2, text_rect2 = render_text("Think normally", 20)
@@ -155,8 +157,8 @@ def gameplay():
     SPAWN_TIME = 2000
     pygame.time.set_timer(SPAWN, SPAWN_TIME)
 
-    SSVEP1, ssvep_surfs1, ssvep_surf1 = generate_ssvep(1, 8)
-    SSVEP2, ssvep_surfs2, ssvep_surf2 = generate_ssvep(2, 22)
+    SSVEP1, ssvep_surfs1, ssvep_surf1, ssvep_rect1 = generate_ssvep(1, 8.0)
+    SSVEP2, ssvep_surfs2, ssvep_surf2, ssvep_rect2 = generate_ssvep(2, 22.0)
 
     game_theme = pygame.mixer.music.load("../assets/game-theme-temp.mp3")
     pygame.mixer.music.play(-1, 0)
@@ -215,9 +217,14 @@ def gameplay():
         bullet_hits = pygame.sprite.groupcollide(enemies, bullets, True, True, pygame.sprite.collide_circle_ratio(0.7))
         score += len(bullet_hits) * 100
 
+        ssvep_rect1.top = ship1.rect.top
+        ssvep_rect1.left = ship1.rect.left - 60
+        ssvep_rect2.top  = ship1.rect.top     
+        ssvep_rect2.left = ship1.rect.left + 75
+
         screen.fill((0, 0, 0))
-        screen.blit(ssvep_surf1, (0, 0))
-        screen.blit(ssvep_surf2, (SCREEN_WIDTH - SSVEP_WIDTH, 0))
+        screen.blit(ssvep_surf1, ssvep_rect1)
+        screen.blit(ssvep_surf2, ssvep_rect2)
         if score_frames == 60:
             score += 1
             score_frames = 0
