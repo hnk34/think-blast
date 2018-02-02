@@ -3,9 +3,16 @@ import math
 import random
 
 SCREEN_HEIGHT = 700
-SCREEN_WIDTH  = 700
+SCREEN_WIDTH  = 1024
 screen        = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 screen_rect   = screen.get_rect()
+OOB_HEIGHT    = 1200
+OOB_WIDTH     = 900
+bounds        = pygame.display.set_mode((OOB_WIDTH, OOB_HEIGHT))
+bounds_rect   = bounds.get_rect()
+bounds_rect.top  -= 150
+bounds_rect.left -= 150
+
 
 class game_object(pygame.sprite.Sprite):
     def __init__(self, angle):
@@ -18,7 +25,7 @@ class game_object(pygame.sprite.Sprite):
 
     def update(self):
         self.move_forward()
-        if not screen_rect.contains(self.rect):
+        if not bounds_rect.contains(self.rect):
             self.kill()
 
 class ship(game_object):
@@ -94,10 +101,10 @@ class enemy(game_object):
         spawn_top = random.choice([True, False])
         if spawn_top:
             self.rect.top = 0
-            self.angle    = (math.pi/2) + (random.random()*math.pi)
+            self.angle    = random.choice([math.pi, math.pi+(math.pi/4), math.pi-(math.pi/4)])
         else:
             self.rect.top = SCREEN_HEIGHT - self.rect.height
-            self.angle    = (3*math.pi)/2 + (random.random()*math.pi)
+            self.angle    = random.choice([0, math.pi/4, (2*math.pi)-(math.pi/4)])
 
 class bullet(game_object):
     def __init__(self, angle):

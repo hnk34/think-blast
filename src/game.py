@@ -5,11 +5,12 @@ from math import sin, cos, degrees
 from interface import init_lsl, read_lsl, classify_buf
 
 SCREEN_HEIGHT = 700
-SCREEN_WIDTH  = 700
+SCREEN_WIDTH  = 1024
+SSVEP_WIDTH   = 50
 clock  = pygame.time.Clock()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
-def write_cal_trial(cal_file, num_trial, mode):
+def write_cal_trial(cal_file, time, num_trial, mode):
     """
     write_cal_trial() - Write epoching data to the calibration file
     @cal_file:  The file variable for the calibration file.
@@ -19,18 +20,18 @@ def write_cal_trial(cal_file, num_trial, mode):
     Returns: None
     """
     if mode == 0 and num_trial == 0:
-        cal_file.write("SSVEP LEFT")
+        cal_file.write(str(time) + ", SSVEP LEFT\n")
     elif mode == 0 and num_trial == 1:
-        cal_file.write("SSVEP BASE")
+        cal_file.write(str(time) + ", SSVEP BASE\n")
     elif mode == 0 and num_trial == 2:
-        cal_file.write("SSVEP RIGHT")
+        cal_file.write(str(time) + ", SSVEP RIGHT\n")
     
     if mode == 1 and num_trial == 0:
-        cal_file.write("MIMG ALL")
+        cal_file.write(str(time) + ", MIMG ALL\n")
     if mode == 1 and num_trial == 1:
-        cal_file.write("MIMG BASE")
+        cal_file.write(str(time) + ", MIMG BASE\n")
     if mode == 1 and num_trial == 2:
-        cal_file.write("MIMG NONE")
+        cal_file.write(str(time) + ", MIMG NONE\n")
 
 def generate_ssvep(event_num, freq):
     """
@@ -44,9 +45,9 @@ def generate_ssvep(event_num, freq):
     Return: The timer event, ssvep surfaces, and current surface.
     """
     SSVEP = pygame.USEREVENT + event_num
+    time  = int(round((1.0 / freq) * 1000.0))
     pygame.time.set_timer(SSVEP, time)
 
-    SSVEP_WIDTH = 50
     ssvep_on  = pygame.Surface((SSVEP_WIDTH, SCREEN_HEIGHT))
     ssvep_off = pygame.Surface((SSVEP_WIDTH, SCREEN_HEIGHT))
     ssvep_on.fill((255,255,255))
@@ -66,12 +67,12 @@ def render_text(msg, size):
 
     Return: The text object, and the centered text rect
     """
-    select_font = pygame.font.Font('../assets/ms_reg.ttf', size)
+    select_font = pygame.font.Font("../assets/prstartk.ttf", size)
     text_surf   = select_font.render(msg, True, (255,255,255))
     text_rect   = text_surf.get_rect(center = (SCREEN_WIDTH/2, SCREEN_HEIGHT/2))
     return text_surf, text_rect
 
-def run_calibration_set(cal_file, mode, num_trials, time_per):
+def run_calibration_set(cal_file, cal_file2, mode, num_trials, time_per):
     """
     run_calibration_set() - do a set of trials to generate a calibration dataset
     @cal_file:   The file variable for the calibration file 
@@ -87,8 +88,8 @@ def run_calibration_set(cal_file, mode, num_trials, time_per):
         text1, text_rect1 = render_text("Look at the left flashing light",20)
         text2, text_rect2 = render_text("Look at the center of the screen", 20)
         text3, text_rect3 = render_text("Look at the right flashing light", 20)
-        SSVEP1, ssvep_surfs1, ssvep_surf1 = generate_ssvep(1, 100)
-        SSVEP2, ssvep_surfs2, ssvep_surf2 = generate_ssvep(2, 40)
+        SSVEP1, ssvep_surfs1, ssvep_surf1 = generate_ssvep(1, 8.0)
+        SSVEP2, ssvep_surfs2, ssvep_surf2 = generate_ssvep(2, 22.0)
     elif mode == 1: # Motor imagery
         text1, text_rect1 = render_text("Think about moving wildly, loud noises, etc.",20)
         text2, text_rect2 = render_text("Think normally", 20)
@@ -99,10 +100,15 @@ def run_calibration_set(cal_file, mode, num_trials, time_per):
     text_rect  = next(text_rects)
 
     in1           = init_lsl("EEG", 0)
-    i, trial_type = 0
+    i, trial_type = 0, 0
     done          = False
     TRIAL         = pygame.USEREVENT + 0
     pygame.time.set_timer(TRIAL, time_per)
+
+
+    time, sample = read_lsl(in1)
+    write_cal_trial(cal_file2, time, trial_type, mode)
+
     while (i < num_trials * 3) and not done:
          for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -117,7 +123,7 @@ def run_calibration_set(cal_file, mode, num_trials, time_per):
                 trial_type += 1
                 if trial_type == 3:
                     trial_type = 0
-                write_cal_trial(cal_file, i, mode)
+                write_cal_trial(cal_file2, time, trial_type, mode)
 
          screen.fill((0,0,0))
          screen.blit(text_surf, text_rect)
@@ -132,9 +138,11 @@ def run_calibration_set(cal_file, mode, num_trials, time_per):
         
 def calibrate():
     f = open("./cal_file", "w")
-    run_calibration_set(f, 0, 1, 5000)
-    run_calibration_set(f, 1, 1, 5000)   
+    f2 = open("./cal_file_markers", "w")
+    run_calibration_set(f, f2, 0, 1, 5000)
+    run_calibration_set(f, f2, 1, 1, 5000)   
     f.close()
+    f2.close()
 
 def gameplay():
     all_sprites = pygame.sprite.Group()
@@ -147,11 +155,11 @@ def gameplay():
     SPAWN_TIME = 2000
     pygame.time.set_timer(SPAWN, SPAWN_TIME)
 
-    SSVEP1, ssvep_surfs1, ssvep_surf1 = generate_ssvep(1, 100)
-    SSVEP2, ssvep_surfs2, ssvep_surf2 = generate_ssvep(2, 40)
+    SSVEP1, ssvep_surfs1, ssvep_surf1 = generate_ssvep(1, 8)
+    SSVEP2, ssvep_surfs2, ssvep_surf2 = generate_ssvep(2, 22)
 
     game_theme = pygame.mixer.music.load("../assets/game-theme-temp.mp3")
-    pygame.mixer.music.play(loops = -1)
+    pygame.mixer.music.play(-1, 0)
 
     in1        = init_lsl("EEG", 0)
     sample_buf = []
@@ -159,7 +167,13 @@ def gameplay():
     CLASSIFY   = pygame.USEREVENT + 3
     pygame.time.set_timer(CLASSIFY, 300)
 
+    score = 0
+    score_frames = 0
+    score_surf, score_rect = render_text("Score: %d" % score, 20)
+    score_rect.top = SCREEN_HEIGHT - 20
+
     done = False
+    pygame.key.set_repeat()
     while not done:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -194,15 +208,25 @@ def gameplay():
 
         all_sprites.update()
 
-        player_hits = pygame.sprite.spritecollide(ship1, enemies, False)
+        player_hits = pygame.sprite.spritecollide(ship1, enemies, False, collided = pygame.sprite.collide_circle_ratio(0.7))
         if player_hits:
+            leaderboard(score)
             done = True
-        bullet_hits = pygame.sprite.groupcollide(enemies, bullets, True, True)
+        bullet_hits = pygame.sprite.groupcollide(enemies, bullets, True, True, pygame.sprite.collide_circle_ratio(0.7))
+        score += len(bullet_hits) * 100
 
         screen.fill((0, 0, 0))
         screen.blit(ssvep_surf1, (0, 0))
         screen.blit(ssvep_surf2, (SCREEN_WIDTH - SSVEP_WIDTH, 0))
-        all_sprites.draw(screen) 
+        if score_frames == 60:
+            score += 1
+            score_frames = 0
+        else:
+            score_frames += 1
+        score_surf, _ = render_text("Score: %d" % score, 20)
+        screen.blit(score_surf, score_rect)
+        all_sprites.draw(screen)
+
         pygame.display.flip()
 
         time, sample = read_lsl(in1)
@@ -211,9 +235,45 @@ def gameplay():
 
         clock.tick(60)
 
+def leaderboard(score):
+    f = file.open("./high_scores", "w")
+
+    names, name_rects = [], []
+    i = 20
+    for line in f.readline():
+        name, name_rect = render_text("%s" % line, 20)
+        name_rect.top
+        names.append(name)
+        name_rects.append(name_rect)
+        i += 20
+
+    prompt = "Enter your name: "
+
+    while not done:
+        if event.type == pygame.QUIT:
+            done = True
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_ENTER:
+            done = True
+        if event.type == pygame.KEYDOWN:
+            prompt += pygame.key.name(event.key)
+
+        screen.fill(( 0, 0, 0))
+        prompt_surf, prompt_rect = render_text(prompt, 20)
+        screen.blit(prompt_surf, prompt_rect)
+        for idx, val in enumerate(names):
+            screen.blit(val, name_rects[idx])
+        
+        pygame.display.flip()
+        clock.tick(60)
+    f.close()
+
 def main():
     pygame.init()
     pygame.display.set_caption('Think-Blast')
+
+    title_unscale   = pygame.image.load('../assets/title.png')
+    title           = pygame.transform.scale(title_unscale, (500, 200))
+    title_rect      = title.get_rect(center = (SCREEN_WIDTH/2, 150))
 
     done = False
     while not done:
@@ -230,14 +290,14 @@ def main():
         if pressed[pygame.K_c]:
             calibrate()
 
-        title,title_rect = render_text("Think-Blast", 50)
-        title_rect.top -= 200
-        play, play_rect = render_text("Press p to Play", 20)
+        play, play_rect = render_text("Press p to Play", 30)
         play_rect.top += 0
-        cal, cal_rect   = render_text("Press c to Calibrate", 20)
-        cal_rect.top += 25
-        quit, quit_rect = render_text("Press q to Quit", 20)
-        quit_rect.top += 50
+        cal, cal_rect   = render_text("Press c to Calibrate", 30)
+        cal_rect.left = play_rect.left
+        cal_rect.top += 40
+        quit, quit_rect = render_text("Press q to Quit", 30)
+        quit_rect.left = play_rect.left
+        quit_rect.top += 80
 
         screen.fill((0, 0, 0))
         screen.blit(title, title_rect)
