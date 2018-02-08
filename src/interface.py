@@ -31,32 +31,33 @@ def csv_to_nparray(cal_file):
     return x,y
 
 def arr_to_feature(x):
-   x_size = x.shape
-   tmp = np.empty(shape = x_size)
-   x2 = np.array()
-   means_final = np.array()
-   i = 0
-   while j< x.shape[0] and i < x.shape[0]:
-   	while x[i, 0] == x[i+1, 0]:
-            tmp = x[i]
-            x2.append(tmp)
-            means = np.mean(x2, axis = 1)
-            first_row_mean = np.mean(x2[0])
-            last_row_mean = np.mean(x2[end])
-            means = np.mean(x2.compress([0,end], axis=-2), axis=-2)
-            means = np.expand_dims(means, axis=-2)
-            means_final.append([x[i],means])
-            i += 1
-	j=i
+   means_final = []
+   i2=0
+   j2=0
+   for k in range(0,60):
+	j=0
+	while x[i2,0]==x[j2+j,0]:
+		j=j+1	
+	j2=j2+j+1	
+        x2=x[i2:j2,0:6]
+        means = numpy.mean(x2, axis = 1)
+        first_row_mean = numpy.mean(x2[0,0:6])
+        last_row_mean = numpy.mean(x2[j,0:6])
+        means = numpy.mean(x2.compress([0,6], axis=-2), axis=-2)
+        means = numpy.expand_dims(means, axis=-2)
+        means_final.append([x[k],means])
+	i2=j2
+
+   print means
    return means_final
     
 def butter_filter(x):
     pass
 
 def get_classifier(x,y):
-    """ clf = LinearDiscriminantAnalysis()
+    clf = LinearDiscriminantAnalysis()
     clf.fit(x,y)
-    return clf"""
+    return clf
 
 def voting_matrix(x):
     return np.round(np.mean(x))
@@ -69,8 +70,8 @@ def classify_buf(lda_classifier, sample_buf):
     Returns: ssvep_result controls game rotation and is 0/1/2 for left/none/right,
              mimg_result controls firing and is 0/1 for fire/don't fire
     """
-    #x = clf.predict(sample_buf)
-    #ssvep_result = voting_matrix(x)
+    x = clf.predict(sample_buf)
+    ssvep_result = voting_matrix(x)
     ssvep_result = 0
     return ssvep_result, 0
 
