@@ -2,7 +2,7 @@ import json
 import render
 
 def high_scores(screen, score):
-    json_data = open("./high_scores.json").read()
+    """    json_data = open("./high_scores.json").read()
 
     names, name_rects = [], []
     i = 20
@@ -13,4 +13,5 @@ def high_scores(screen, score):
         i += 20
 
     prompt = "Enter your name: "
-
+    """
+    pass

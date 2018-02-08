@@ -24,10 +24,10 @@ def main():
         if pressed[pygame.K_q]:
             done = True
         if pressed[pygame.K_p]:
-            game.gameplay()
+            game.gameplay(screen, clock)
             done = True
         if pressed[pygame.K_c]:
-            calibrate.calibrate(screen)
+            calibrate.calibrate(screen, clock)
 
         screen_rect = screen.get_rect()
         x = screen_rect.centerx

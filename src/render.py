@@ -1,4 +1,5 @@
 import pygame
+from itertools import cycle
 
 def ssvep(event_num, freq):
     """
@@ -15,6 +16,9 @@ def ssvep(event_num, freq):
     time  = int(round((1.0 / (freq * 2)) * 1000.0))
     pygame.time.set_timer(SSVEP, time)
 
+
+    SSVEP_WIDTH  = 50
+    SSVEP_HEIGHT = 50
     ssvep_on  = pygame.Surface((SSVEP_WIDTH, SSVEP_HEIGHT))
     ssvep_off = pygame.Surface((SSVEP_WIDTH, SSVEP_HEIGHT))
     ssvep_on.fill((255,255,255))
