@@ -89,7 +89,7 @@ def get_classifier(cal_file):
     x,y = csv_to_nparray(cal_file)
     feats = np.array[20, 2]
     j = 0
-    for i in range(0, len(y))
+    for i in range(0, len(y)):
         feats[i] =  trial_to_feat(x[j:j+300, :])
     clf = LinearDiscriminantAnalysis()
     clf.fit(feats,y)
@@ -104,16 +104,26 @@ def voting_matrix(x):
     """
     return np.round(np.mean(x))
 
+def buf_to_feats(buf):
+    """
+    buf_to_feats(): Converts the raw electrode data buffer into a feature vector, in real-time.
+    @buf: The electrode data.
+
+    Returns: The feature vector.
+    """
+    pass # TODO
+
 def classify_buf(lda_classifier, sample_buf):
     """
-    classify_buf() - Takes the sample buffer, does EEG classification to determine game action.
+    classify_buf() - online function, takes the sample buffer, does EEG classification to determine game action
     buf - The buffer containing relevant  EEG stream samples.
 
     Returns: ssvep_result controls game rotation and is 0/1/2 for left/none/right,
              mimg_result controls firing and is 0/1 for fire/don't fire
     """
-    x = clf.predict(sample_buf)
-    ssvep_result = voting_matrix(x)
+    feats = buf_to_feats(sample_buf)
+    preds = clf.predict(feats)
+    result = voting_matrix(preds)
     ssvep_result = 0
     return ssvep_result, 0
 

@@ -67,22 +67,20 @@ def run_ssvep_cal(screen, clock, inlet, cal_file, num_trials, frames_per):
         else:
             curr_frame += 1
 
-         screen.fill((0,0,0))
-         screen.blit(text_surf, text_rect)
-         screen.blit(ssvep_surf1, (screen_rect.centerx - 50, screen_rect.centery+100))
-         screen.blit(ssvep_surf2, (screen_rect.centerx + 50, screen_rect.centery+100))
+        screen.fill((0,0,0))
+        screen.blit(text_surf, text_rect)
+        screen.blit(ssvep_surf1, (screen_rect.centerx - 50, screen_rect.centery+100))
+        screen.blit(ssvep_surf2, (screen_rect.centerx + 50, screen_rect.centery+100))
 
-         time, sample = interface.read_lsl(inlet)
-         f1.write(str(time) + ',')
-         f1.write(str(trial_type) + ',')
-         for j in sample:
-             if j == 0:
-                 j = "NaN"
-             f1.write(str(j) + ',')
-         f1.write('\n')
+        time, sample = interface.read_lsl(inlet)
+        f1.write(str(time) + ',')
+        f1.write(str(trial_type) + ',')
+        for j in sample:
+            f1.write(str(j) + ',')
+            f1.write('\n')
 
-         pygame.display.flip()
-         clock.tick(60)
+        pygame.display.flip()
+        clock.tick(60)
     f1.close()
 
 def run_mimg_cal(screen, clock, cal_file, num_trials, time_per):
