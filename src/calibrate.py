@@ -3,8 +3,7 @@ from itertools import cycle
 
 def calibrate(screen, clock):
     inlet = interface.init_lsl(0)
-    run_ssvep_cal(screen, clock, inlet, "./cal_ssvep.csv", 20, 5000)
-    #return ssvep_clf
+    run_ssvep_cal(screen, clock, inlet, "./cal_ssvep.csv", 20, 300)
 
 def ssvep_prompts(screen):
     screen_rect = screen.get_rect()
@@ -32,7 +31,7 @@ def mimg_prompts(screen):
     text_rect  = next(text_rects)
     return text_surfs, text_surf, text_rects, text_rect
 
-def run_ssvep_cal(screen, clock, inlet, cal_file, num_trials, time_per):
+def run_ssvep_cal(screen, clock, inlet, cal_file, num_trials, frames_per):
     screen_rect   = screen.get_rect()
 
     SSVEP1, ssvep_surfs1, ssvep_surf1, _ = render.ssvep(1, 8.0)
@@ -47,7 +46,7 @@ def run_ssvep_cal(screen, clock, inlet, cal_file, num_trials, time_per):
     trial_type = 0
     done = False
     while (i < num_trials * 3) and not done:
-         for event in pygame.event.get():
+        for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 f1.close()
                 done = True
@@ -56,13 +55,17 @@ def run_ssvep_cal(screen, clock, inlet, cal_file, num_trials, time_per):
                 ssvep_surf1 = next(ssvep_surfs1)
             if event.type == SSVEP2:
                 ssvep_surf2 = next(ssvep_surfs2)
-            if event.type == TRIAL:
-                text_surf = next(text_surfs)
-                text_rect = next(text_rects)
-                trial_type += 1
-                i += 1
-                if (trial_type >= 3):
-                    trial_type = 0
+           
+        if curr_frame == frames_per:
+            text_surf = next(text_surfs)
+            text_rect = next(text_rects)
+            trial_type += 1
+            i += 1
+            if (trial_type >= 3):
+                trial_type = 0
+            curr_frame = 0
+        else:
+            curr_frame += 1
 
          screen.fill((0,0,0))
          screen.blit(text_surf, text_rect)
@@ -73,6 +76,8 @@ def run_ssvep_cal(screen, clock, inlet, cal_file, num_trials, time_per):
          f1.write(str(time) + ',')
          f1.write(str(trial_type) + ',')
          for j in sample:
+             if j == 0:
+                 j = "NaN"
              f1.write(str(j) + ',')
          f1.write('\n')
 

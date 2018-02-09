@@ -4,7 +4,6 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
 def init_lsl(stream_index):
     """init_lsl() - initialize an LSL stream containing EEG data
-    @stream_type:  Should be "EEG" for EEG data.
     @stream_index: LSL supports multiple concurrent streams, this selects one.
 
     Returns: A stream inlet that can be read from.
@@ -24,42 +23,85 @@ def read_lsl(inlet):
     return time, sample
 
 def csv_to_nparray(cal_file):
-    my_data = numpy.genfromtxt(cal_file, delimiter=',')
-    end_index = my_data.shape[1]
-    x = my_data[:, 1:end_index]
-    y = my_data[:, 1]
+    """
+    csv_to_nparray() - converts a csv calibration file to numpy array
+    @cal_file: The full path of the calibration file.
+
+    Returns: A tuple with the electrode data (x), and the trial data (y)
+    """
+    dat = numpy.genfromtxt(cal_file, delimiter=',')
+    x = my_data[:, 2:len(dat)]
+    y = numpy.unique(my_data[1])
     return x,y
 
-def arr_to_feature(x):
-   means_final = []
-   i2=0
-   j2=0
-   for k in range(0,60):
-	j=0
-	while x[i2,0]==x[j2+j,0]:
-		j=j+1	
-	j2=j2+j+1	
-        x2=x[i2:j2,0:6]
-        means = numpy.mean(x2, axis = 1)
-        first_row_mean = numpy.mean(x2[0,0:6])
-        last_row_mean = numpy.mean(x2[j,0:6])
-        means = numpy.mean(x2.compress([0,6], axis=-2), axis=-2)
-        means = numpy.expand_dims(means, axis=-2)
-        means_final.append([x[k],means])
-	i2=j2
+def trial_to_feat(x):
+    """
+    trial_to_feat() - convert the data from a single calibration trial into a feature vector.
+    @x: The raw electrode data for a single trial (should be 300 samples). 
 
-   print means
-   return means_final
-    
+    Returns: A feature vector, read to be appended then fed into the LDA trainer.
+    """
+    o1 = seq_to_pwr(x[1])
+    o2 = seq_to_pwr(x[2])
+    oz = seq_to_pwr(x[3])
+    mean_8hz  = numpy.mean([o1[0], o2[0], o3[0]])
+    mean_19hz = numpy.mean([o1[1], o2[1], o3[1]])
+    feat = np.array([mean_8hz, mean_19hz])
+    return feat
+
+def seq_to_bands(x):
+    """
+    seq_to_amp() - convert a single electrode data sequence into 2 band powers
+    @x: Raw electrode data for a single electrode.
+
+    Returns: A numpy array containing the band power at 8 and 19 Hz.
+    """
+    amp_8hz  = seq_to_bandpower(x, 7.5, 8.5)
+    amp_19hz = seq_to_bandpower(x, 18.5, 19.5)
+    amps = np.array([amp_8hz, amp_19hz])
+    return amps
+
+def seq_to_pwr(x, lowfreq, hifreq):
+    """
+    seq_to_pwr() - convert a single electrode data sequence into a band power amplitude
+    @x: Single electrode data.
+    @lowfreq: Low cutoff frequency.
+    @hifreq: High cutoff frequency.
+
+    Returns: A single amplitude value. 
+    """
+    spec  = numpy.fft.fft(x)
+    freqs = np.fft.fftfreq(x.size, 1/60)
+    mask  = numpy.logical_and( freqs >= lowfreq, freqs <= hifreq)
+    avg   = spec[mask].mean()
+    return avg
+
 def butter_filter(x):
     pass
 
-def get_classifier(x,y):
+def get_classifier(cal_file):
+    """"
+    get_classifier() - generate an SSVEP classifier using LDA, based on a calibration file
+    @cal_file: The full path of the calibration file.
+
+    Returns: Scikit classifier object.
+    """
+    x,y = csv_to_nparray(cal_file)
+    feats = np.array[20, 2]
+    j = 0
+    for i in range(0, len(y))
+        feats[i] =  trial_to_feat(x[j:j+300, :])
     clf = LinearDiscriminantAnalysis()
-    clf.fit(x,y)
+    clf.fit(feats,y)
     return clf
 
 def voting_matrix(x):
+    """
+    voting_matrix() - Given multiple predicted LDA classifications, determine a final class.
+    @x: The array of all predicted values.
+
+    Returns: A single class value.
+    """
     return np.round(np.mean(x))
 
 def classify_buf(lda_classifier, sample_buf):
@@ -75,9 +117,3 @@ def classify_buf(lda_classifier, sample_buf):
     ssvep_result = 0
     return ssvep_result, 0
 
-def gen_filter_vars(lowfreq, highfreq, fn, channels):
-    b_low, a_low   = wyrm.processing.signal.butter(5, [highfreq / fn], btype='low')
-    b_high, a_high = wyrm.processing.signal.butter(5, [lowfreq / fn], btype='high')
-    zi_low         = wyrm.processing.lfilter_zi(b_low, a_low, channels)
-    zi_high        = wyrm.processing.lfilter_zi(b_high, a_high, channels)
-    return zi_low, zi_high
