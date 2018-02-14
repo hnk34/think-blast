@@ -30,8 +30,13 @@ def csv_to_nparray(cal_file):
     Returns: A tuple with the electrode data (x), and the trial data (y)
     """
     dat = numpy.genfromtxt(cal_file, delimiter=',')
-    x = my_data[:, 2:len(dat)]
-    y = numpy.unique(my_data[1])
+    s = dat.shape
+    end_col = s[1] - 1
+    end_row = s[0] - 1
+    dat = dat[:, 0:end_col] # Genfromtext adds a nan to the end of each line, this fixes it
+    x = dat[0:end_row, 2:end_col]
+    y = dat[0:end_row:301, 1]
+    print y
     return x,y
 
 def trial_to_feat(x):
@@ -41,12 +46,12 @@ def trial_to_feat(x):
 
     Returns: A feature vector, read to be appended then fed into the LDA trainer.
     """
-    o1 = seq_to_pwr(x[1])
-    o2 = seq_to_pwr(x[2])
-    oz = seq_to_pwr(x[3])
+    o1 = seq_to_bands(x[:, 0])
+    o2 = seq_to_bands(x[:, 1])
+    oz = seq_to_bands(x[:, 2])
     mean_8hz  = numpy.mean([o1[0], o2[0], o3[0]])
     mean_19hz = numpy.mean([o1[1], o2[1], o3[1]])
-    feat = np.array([mean_8hz, mean_19hz])
+    feat = numpy.array([mean_8hz, mean_19hz])
     return feat
 
 def seq_to_bands(x):
@@ -56,9 +61,9 @@ def seq_to_bands(x):
 
     Returns: A numpy array containing the band power at 8 and 19 Hz.
     """
-    amp_8hz  = seq_to_bandpower(x, 7.5, 8.5)
-    amp_19hz = seq_to_bandpower(x, 18.5, 19.5)
-    amps = np.array([amp_8hz, amp_19hz])
+    amp_8hz  = seq_to_pwr(x, 7.5, 8.5)
+    amp_19hz = seq_to_pwr(x, 18.5, 19.5)
+    amps = numpy.array([amp_8hz, amp_19hz])
     return amps
 
 def seq_to_pwr(x, lowfreq, hifreq):
@@ -70,9 +75,11 @@ def seq_to_pwr(x, lowfreq, hifreq):
 
     Returns: A single amplitude value. 
     """
+    # TODO: adjust the start time of the fft to ensure SSVEP has been induced
+    # Skip first 7 frames
     spec  = numpy.fft.fft(x)
-    freqs = np.fft.fftfreq(x.size, 1/60)
-    mask  = numpy.logical_and( freqs >= lowfreq, freqs <= hifreq)
+    freqs = numpy.fft.fftfreq(x.size, 1/60)
+    mask  = numpy.logical_and(freqs >= lowfreq, freqs <= hifreq)
     avg   = spec[mask].mean()
     return avg
 
@@ -87,7 +94,7 @@ def get_classifier(cal_file):
     Returns: Scikit classifier object.
     """
     x,y = csv_to_nparray(cal_file)
-    feats = np.array[20, 2]
+    feats = numpy.empty((20, 2))
     j = 0
     for i in range(0, len(y)):
         feats[i] =  trial_to_feat(x[j:j+300, :])

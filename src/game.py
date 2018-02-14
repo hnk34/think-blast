@@ -1,20 +1,16 @@
 import pygame
 import high_scores
+import interface
 from game_object import ship, enemy, bullet
-from wyrm.types import RingBuffer
-import wyrm.processing as proc
-from wyrm import io
 
-def gameplay(screen):
+def gameplay(screen, clock):
     all_sprites = pygame.sprite.Group()
     enemies     = pygame.sprite.Group()
     bullets     = pygame.sprite.Group()
     ship1       = ship()
     all_sprites.add(ship1)
 
-    x1, y = interface.csv_to_nparray("./cal_ssvep.csv")
-    x2 = arr_to_feature(x1)
-    clf = interface.get_classifier(x2,y)
+    clf = interface.get_classifier("./cal_ssvep.csv")
 
     SPAWN      = pygame.USEREVENT + 0
     SPAWN_TIME = 2000
@@ -67,7 +63,6 @@ def gameplay(screen):
                     all_sprites.add(b)
                     bullets.add(b)
 
-
         all_sprites.update()
         player_hits = pygame.sprite.spritecollide(ship1, enemies, False, pygame.sprite.collide_circle_ratio(0.7))
         if player_hits:
@@ -95,7 +90,7 @@ def gameplay(screen):
 
         pygame.display.flip()
 
-        time, sample = interface.read_lsl(inlet) 
+        time, sample = interface.read_lsl(inlet)
 
         clock.tick(60)
 

@@ -1,6 +1,4 @@
-import pygame
-import math
-import random
+import pygame, math, random
 
 SCREEN_HEIGHT = 700
 SCREEN_WIDTH  = 1024
@@ -12,7 +10,6 @@ bounds        = pygame.display.set_mode((OOB_WIDTH, OOB_HEIGHT))
 bounds_rect   = bounds.get_rect()
 bounds_rect.top  -= 150
 bounds_rect.left -= 150
-
 
 class game_object(pygame.sprite.Sprite):
     def __init__(self, angle):
