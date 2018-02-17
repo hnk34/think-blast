@@ -25,7 +25,6 @@ def main():
             done = True
         if pressed[pygame.K_p]:
             game.gameplay(screen, clock)
-            done = True
         if pressed[pygame.K_c]:
             calibrate.calibrate(screen, clock)
 

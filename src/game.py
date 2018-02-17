@@ -11,25 +11,30 @@ def gameplay(screen, clock):
     all_sprites.add(ship1)
 
     clf = interface.get_classifier("./cal_ssvep.csv")
+    print "Classifier generated!"
+    f = interface.trial_to_feat(x)
+    clf.classify_bu
 
     SPAWN      = pygame.USEREVENT + 0
     SPAWN_TIME = 2000
     pygame.time.set_timer(SPAWN, SPAWN_TIME)
 
-    SSVEP1, ssvep_surfs1, ssvep_surf1, ssvep_rect1 = generate_ssvep(1, 8.0)
-    SSVEP2, ssvep_surfs2, ssvep_surf2, ssvep_rect2 = generate_ssvep(2, 22.0)
+    SSVEP1, ssvep_surfs1, ssvep_surf1, ssvep_rect1 = render.generate_ssvep(1, 8.0)
+    SSVEP2, ssvep_surfs2, ssvep_surf2, ssvep_rect2 = render.generate_ssvep(2, 22.0)
 
     game_theme = pygame.mixer.music.load("../assets/game-theme-temp.mp3")
     pygame.mixer.music.play(-1, 0)
 
     CLASSIFY   = pygame.USEREVENT + 3
-    pygame.time.set_timer(CLASSIFY, 300)
+    pygame.time.set_timer(CLASSIFY, 1000)
 
     score = 0
     score_frames = 0
     score_surf, score_rect = render_text("Score: %d" % score, 20)
     score_rect.top = SCREEN_HEIGHT - 20
 
+    i = 0
+    sample_buf = numpy.empty(60)
     done = False
     pygame.key.set_repeat()
     while not done:
@@ -91,26 +96,11 @@ def gameplay(screen, clock):
         pygame.display.flip()
 
         time, sample = interface.read_lsl(inlet)
+        sample_buf[i] = numpy_asarray(sample[0:2])
+        i+= 1
+        if i == 60:
+            i = 0
+            sample_buf = numpy.empty([60,3])
 
         clock.tick(60)
-
-
-    while not done:
-        if event.type == pygame.QUIT:
-            done = True
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_ENTER:
-            done = True
-        if event.type == pygame.KEYDOWN:
-            prompt += pygame.key.name(event.key)
-
-        screen.fill(( 0, 0, 0))
-        prompt_surf, prompt_rect = render_text(prompt, 20)
-        screen.blit(prompt_surf, prompt_rect)
-        for idx, val in enumerate(names):
-            screen.blit(val, name_rects[idx])
-        
-        pygame.display.flip()
-        clock.tick(60)
-    f.close()
-
 
