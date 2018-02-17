@@ -1,12 +1,17 @@
 import pygame
-import render, calibrate, game
-
-SCREEN_HEIGHT = 700
-SCREEN_WIDTH  = 1024
-clock  = pygame.time.Clock()
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+import render
+import calibrate
+import game
 
 def main():
+    SCREEN_HEIGHT = 700
+    SCREEN_WIDTH  = 1024
+    clock  = pygame.time.Clock()
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    screen_rect = screen.get_rect()
+    x = screen_rect.centerx
+    y = screen_rect.centery
+
     pygame.init()
     pygame.display.set_caption('Think-Blast')
 
@@ -28,9 +33,6 @@ def main():
         if pressed[pygame.K_c]:
             calibrate.calibrate(screen, clock)
 
-        screen_rect = screen.get_rect()
-        x = screen_rect.centerx
-        y = screen_rect.centery
         play, play_rect = render.text("Press p to Play", 30, (x,y))
         play_rect.top += 0
         cal, cal_rect   = render.text("Press c to Calibrate", 30, (x,y))

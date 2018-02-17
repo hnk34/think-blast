@@ -1,4 +1,6 @@
-import interface, pygame, render
+import interface
+import pygame
+import render
 from itertools import cycle
 
 def calibrate(screen, clock):

@@ -1,6 +1,18 @@
 import interface
+import unittest
+import matplotlib.pyplot as plt
+import numpy
 
-in1 = interface.init_lsl(0)
-while 1:
-    time, sample = interface.read_lsl(in1)
-    print(str(time) + str(sample) + "\n")
+class TestBciData(unittest.TestCase):
+    def test_calib_plot(self):
+        """
+        Plot the value of the O1 electrode over time, to see drift.
+        """
+        x,y = interface.csv_to_nparray("./cal_ssvep.csv")
+        mag_vals  = x[:, 0].T
+        plt.plot(mag_vals)
+        plt.show()
+        self.assertEqual(True, True)
+
+if __name__ == '__main__':
+    unittest.main()
