@@ -3,8 +3,7 @@ Think-Blast is a space shooter game that uses a Brain-Computer Interface (BCI) t
 Depencies:
  - Python 2.7
  - All python modules in requirements.txt
- - OpenBCI_Processing (download latest version from OpenBCI Github)
- - Processing (required to run OpenBCI_GUI)
+ - OpenBCI_LSL
 
 Instructions:
 Step 1
@@ -13,8 +12,8 @@ Connect 8 electrodes to the Cyton board and user's head, following the 10-20 EEG
  - Channel 1: O1
  - Channel 2: O2
  - Channel 3: OZ
- - Channel 4: P1
- - Channel 5: P3
+ - Channel 4: P3
+ - Channel 5: P4
  - Channel 6: Pz
  - Channel 7: C3
  - Channel 8: C4
@@ -22,13 +21,8 @@ Connect 8 electrodes to the Cyton board and user's head, following the 10-20 EEG
 The electrodes can be applied using the UltraCortex headset, or with traditional wet electrodes.
 
 Step 2
- - Run openBCI-GUI.
- - For "Data Source", select "Live from Cyton". Select the appropriate options for connecting to the headset dongle.
- - Ensure none of the inputs are "Railed". Adjust electrode placement if necessary.
- - Load the "Networking" widget panel.
- - Select "LSL" for stream type.
- - Select "Band Power" on stream index #0. Leave other options as default.
- - Press "Start Stream".
+ - Run OpenBCI_LSL
+ - Start an 8-channel stream at index 0 (default settings). 
 
 Step 3
 - In a terminal, navigate to the src folder within the downloaded "think-blast" game directory.

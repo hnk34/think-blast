@@ -28,9 +28,9 @@ def high_scores(screen, game_score):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 done = True
-            if event.type = pygame.KEYDOWN and event.key == pygame.K_ENTER:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ENTER:
                 done = True
-            elif event.type = pygame.KEYDOWN and event.key <= 127:
+            elif event.type == pygame.KEYDOWN and event.key <= 127:
                 prompt.append(chr(event.key))
             elif event.key == K_BACKSPACE:
                 if len(prompt) > 17:

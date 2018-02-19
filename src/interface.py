@@ -1,6 +1,7 @@
 import pylsl
 import numpy
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis 
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from scipy import signal 
 
 def init_lsl(stream_index):
     """init_lsl() - initialize an LSL stream containing EEG data
@@ -19,8 +20,8 @@ def read_lsl(inlet):
 
     Returns: A tuple with the timestamp integer, and sample (multiple variables in list form)
     """
-    sample, time = inlet.pull_sample()
-    return time, sample
+    samples, times = inlet.pull_chunk()
+    return times, samples
 
 def csv_to_nparray(cal_file):
     """
@@ -43,11 +44,19 @@ def trial_to_feat(x, lowfreq, hifreq):
     trial_to_feat() - convert the data from a single calibration trial into a feature vector.
     @x: The raw electrode data for a single trial (should be 300 samples). 
 
-    Returns: A feature vector, read to be appended then fed into the LDA trainer.
+    Returns: A feature vector, ready to be appended then fed into the LDA trainer.
     """
     o1 = seq_to_bands(x[:, 0], lowfreq, hifreq)
-    o2 = seq_to_bands(x[:, 1])
-    oz = seq_to_bands(x[:, 2])
+    o2 = seq_to_bands(x[:, 1], lowfreq, hifreq)
+    oz = seq_to_bands(x[:, 2], lowfreq, hifreq)
+    p3 = seq_to_bands(x[:, 3], lowfreq, hifreq)
+    p4 = seq_to_bands(x[:, 4], lowfreq, hifreq)
+    pz = seq_to_bands(x[:, 5], lowfreq, hifreq)
+    c3 = seq_to_bands(x[:, 6], lowfreq, hifreq)
+    c4 = seq_to_bands(x[:, 7], lowfreq, hifreq)
+
+    weights = numpy.array([1, 1, 1, 0.2, 0.2, 0.2, 0.2, 0.2])
+
     mean_8hz  = numpy.mean([o1[0], o2[0], oz[0]])
     mean_19hz = numpy.mean([o1[1], o2[1], oz[1]])
     feat = numpy.array([mean_8hz, mean_19hz])
@@ -74,16 +83,18 @@ def seq_to_pwr(x, lowfreq, hifreq):
 
     Returns: A single amplitude value. 
     """
-    # TODO: adjust the start time of the fft to ensure SSVEP has been induced
-    # Skip first 7 frames
+    # Skip first 150ms, epoch duration 3s (750 frames)
+    x = x[37:787, :]
     spec  = numpy.fft.fft(x)
-    freqs = numpy.fft.fftfreq(len(x), 1.0/60)
+    freqs = numpy.fft.fftfreq(len(x), 1.0/250.0)
     mask  = numpy.logical_and(freqs >= lowfreq, freqs <= hifreq)
     avg   = spec[mask].mean()
     return avg
 
 def butter_filter(x):
-    pass
+    filt_a, filt_b = signal.butter(5, [5, 20], 'bandpass', analog=True)
+    y = 0 
+    return y
 
 def get_classifier(cal_file):
     """"
