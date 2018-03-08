@@ -59,14 +59,14 @@ def run_ssvep_cal(screen, clock, inlet, cal_file, num_trials, frames_per):
         screen.blit(ssvep_surf2, (screen_rect.centerx + 150, screen_rect.centery+100))
 
         times, samples = interface.read_lsl(inlet)
-        i = 0
+        j = 0
         for ts in times:
             cal_buf = str(ts) + "," + str(trial_type) + ","
-            for samp in samples[i]:
+            for samp in samples[j]:
                 cal_buf += str(samp)
                 cal_buf += ","
             cal_buf = cal_buf[:-1]
-            i += 1
+            j += 1
             f1.write(cal_buf + "\n")
 
         pygame.display.flip()

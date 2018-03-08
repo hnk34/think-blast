@@ -14,5 +14,11 @@ class TestBciData(unittest.TestCase):
         plt.show()
         self.assertEqual(True, True)
 
+     def test_lda(self):
+         """
+         Create the standard LDA classification graph for the calibration dataset.
+         """
+         x,y = interface.csv_to_nparray("./cal_ssvep.csv")
+
 if __name__ == '__main__':
     unittest.main()

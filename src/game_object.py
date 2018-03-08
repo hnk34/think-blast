@@ -2,29 +2,24 @@ import pygame
 import math
 import random
 
-SCREEN_HEIGHT = 700
-SCREEN_WIDTH  = 1024
-screen        = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-screen_rect   = screen.get_rect()
-OOB_HEIGHT    = 1200
-OOB_WIDTH     = 900
-bounds        = pygame.display.set_mode((OOB_WIDTH, OOB_HEIGHT))
-bounds_rect   = bounds.get_rect()
-bounds_rect.top  -= 150
-bounds_rect.left -= 150
-
 class game_object(pygame.sprite.Sprite):
-    def __init__(self, angle):
+    def __init__(self, screen, angle):
         super(game_object, self).__init__()
         self.angle = angle
         self.speed = 0
+        self.bounds_rect = screen.get_rect()
+        self.screen_rect = screen.get_rect()
+        self.bounds_rect.top -= 150
+        self.bounds_rect.left -= 300
+        self.bounds_rect.width += 30
+        self.bounds_rect.height += 300
 
     def move_forward(self):
         self.rect.move_ip(-self.speed*math.sin(self.angle), -self.speed*math.cos(self.angle))
 
     def update(self):
         self.move_forward()
-        if not bounds_rect.contains(self.rect):
+        if not self.bounds_rect.contains(self.rect):
             self.kill()
 
 class ship(game_object):

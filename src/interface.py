@@ -34,9 +34,9 @@ def csv_to_nparray(cal_file):
     s = dat.shape
     end_col = s[1] - 1
     end_row = s[0] - 1
-    dat = dat[:, 0:end_col] # Genfromtext adds a nan to the end of each line, this fixes it
+    dat = dat[:, 0:end_col]
     x = dat[0:end_row, 2:end_col]
-    y = dat[0:end_row:301, 1]
+    y = dat[0:end_row, 1]
     return x,y
 
 def trial_to_feat(x, lowfreq, hifreq):
@@ -69,12 +69,12 @@ def seq_to_bands(x, lowfreq, hifreq):
 
     Returns: A numpy array containing the band power at the relevant frequencies.
     """
-    amp_lo  = seq_to_pwr(x, lowfreq - 0.5, lowfreq + 0.5)
-    amp_hi = seq_to_pwr(x, highfreq - 0.5, highfreq + 0.5)
+    amp_lo  = seq_to_pwr(x, lowfreq - 0.5, lowfreq + 0.5, 37, 750)
+    amp_hi = seq_to_pwr(x, highfreq - 0.5, highfreq + 0.5, 37, 750)
     amps = numpy.array([amp_lo, amp_hi])
     return amps
 
-def seq_to_pwr(x, lowfreq, hifreq):
+def seq_to_pwr(x, lowfreq, hifreq, first_sample, epoch):
     """
     seq_to_pwr() - convert a single electrode data sequence into a band power amplitude
     @x: Single electrode data.
@@ -83,18 +83,22 @@ def seq_to_pwr(x, lowfreq, hifreq):
 
     Returns: A single amplitude value. 
     """
-    # Skip first 150ms, epoch duration 3s (750 frames)
-    x = x[37:787, :]
+    # Skip first 150ms
+    x = x[first_sample:(first_sample+epoch), :]
     spec  = numpy.fft.fft(x)
     freqs = numpy.fft.fftfreq(len(x), 1.0/250.0)
     mask  = numpy.logical_and(freqs >= lowfreq, freqs <= hifreq)
     avg   = spec[mask].mean()
     return avg
 
-def butter_filter(x):
+def butter_filter():
     filt_a, filt_b = signal.butter(5, [5, 20], 'bandpass', analog=True)
-    y = 0 
-    return y
+    return filt_a, filt_b
+
+def butter_bp(x):
+    a, b = butter_filter()
+    y =  lfilter(a, b, x)
+    return y 
 
 def get_classifier(cal_file):
     """"
@@ -105,10 +109,22 @@ def get_classifier(cal_file):
     """
     x,y = csv_to_nparray(cal_file)
     feats = numpy.empty((60, 2))
+
+    indecies = []
+    k = 0
+    l = 0
+    y2 = []
+    while l <= 60:
+        if y[k] != y[k+1]:
+            indecies.append(k)
+            l += 1
+            y2.append(y[k])
+        k += 1
+
     j = 0
     for i in range(0, 60):
-        feats[i] =  trial_to_feat(x[j:j+300, :], 8, 22)
-        j += 301
+        feats[i] =  trial_to_feat(x[j:j+indecies[i], :], 12.0, 20.0)
+        j += indecies[i]
     print feats
     clf = LinearDiscriminantAnalysis()
     clf.fit(feats,y)
